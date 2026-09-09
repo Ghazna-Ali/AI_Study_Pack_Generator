@@ -270,6 +270,9 @@ def run_workflow(
             str(error)
         )
 
-        raise WorkflowError(
-            f"Study-pack workflow failed: {error}"
-        ) from error
+        except Exception as error:
+    
+    raise WorkflowError(
+        f"Study-pack workflow failed: "
+        f"{type(error).__name__}: {error}"
+    ) from error
