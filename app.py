@@ -85,15 +85,68 @@ if st.button(
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        def update_progress(stage, progress):
-            progress_bar.progress(progress)
-            status_text.info(stage)
+        # Track progress by workflow stage
+        stage_progress = {
+            "Planning": 20,
+            "Content Generation": 40,
+            "Assessment": 60,
+            "Review": 80,
+            "Refinement": 90,
+            "Complete": 100,
+        }
+
+        def update_progress(
+            stage,
+            status,
+            message="",
+        ):
+            """
+            Update the Streamlit progress display.
+
+            The workflow runner sends:
+                stage
+                status
+                message
+            """
+
+            progress = stage_progress.get(
+                stage,
+                0,
+            )
+
+            if status == "running":
+
+                progress_bar.progress(
+                    progress
+                )
+
+                status_text.info(
+                    f"🔄 {stage}: {message}"
+                )
+
+            elif status == "complete":
+
+                progress_bar.progress(
+                    progress
+                )
+
+                status_text.success(
+                    f"✅ {stage}: {message}"
+                )
+
+            elif status == "failed":
+
+                status_text.error(
+                    f"❌ {stage}: {message}"
+                )
 
         # ----------------------------------------------------
         # Run Multi-Stage AI Workflow
         # ----------------------------------------------------
 
-        with st.spinner("Generating your study pack..."):
+        with st.spinner(
+            "Generating your study pack..."
+        ):
 
             result = run_workflow(
                 request=request,
@@ -108,8 +161,9 @@ if st.button(
         st.session_state.study_pack = result
 
         progress_bar.progress(100)
+
         status_text.success(
-            "Study pack generated successfully!"
+            "✅ Study pack generated successfully!"
         )
 
         st.success(
@@ -134,7 +188,9 @@ if st.session_state.study_pack is not None:
 
     st.divider()
 
-    st.header("📖 Your Study Pack")
+    st.header(
+        "📖 Your Study Pack"
+    )
 
     render_results(
         st.session_state.study_pack
