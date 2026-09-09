@@ -265,14 +265,11 @@ def run_workflow(
         )
 
     except Exception as error:
+        import traceback
 
-        state.add_error(
-            str(error)
-        )
+        traceback.print_exc()
 
-        except Exception as error:
-    
-    raise WorkflowError(
-        f"Study-pack workflow failed: "
-        f"{type(error).__name__}: {error}"
-    ) from error
+        raise WorkflowError(
+            f"Study-pack workflow failed: "
+            f"{type(error).__name__}: {error}"
+        ) from error
