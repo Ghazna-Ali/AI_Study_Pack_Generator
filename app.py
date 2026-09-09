@@ -1,11 +1,7 @@
 import streamlit as st
 
-from config.settings import (
-    APP_DESCRIPTION,
-    APP_NAME,
-    APP_VERSION,
-    get_gemini_api_key,
-)
+from config.settings import get_groq_api_key
+
 from ui.components import (
     render_header,
     render_inputs,
@@ -110,7 +106,7 @@ if generate:
 
     try:
 
-        api_key = get_gemini_api_key()
+        api_key = get_groq_api_key()
 
     except Exception as error:
 

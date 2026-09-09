@@ -1,23 +1,9 @@
-from google import genai
+from groq import Groq
 
 
-class GeminiClient:
-    """
-    Thin wrapper around the Gemini API client.
-    """
-
-    def __init__(
-        self,
-        api_key: str,
-    ):
-        if not api_key:
-            raise ValueError(
-                "Gemini API key is required."
-            )
-
-        self.client = genai.Client(
-            api_key=api_key
-        )
+class GroqClient:
+    def __init__(self, api_key: str):
+        self.client = Groq(api_key=api_key)
 
     def generate_json(
         self,
@@ -25,18 +11,24 @@ class GeminiClient:
         prompt: str,
     ) -> str:
 
-        response = self.client.models.generate_content(
+        response = self.client.chat.completions.create(
             model=model,
-            contents=prompt,
-            config={
-                "response_mime_type": "application/json",
-                "temperature": 0.3,
-            },
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an AI study-pack generation engine. "
+                        "Return valid JSON only. "
+                        "Do not include markdown fences or explanations."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=0.3,
+            response_format={"type": "json_object"},
         )
 
-        if not response.text:
-            raise ValueError(
-                "Gemini returned an empty response."
-            )
-
-        return response.text
+        return response.choices[0].message.content
