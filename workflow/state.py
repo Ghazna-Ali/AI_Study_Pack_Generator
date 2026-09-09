@@ -1,25 +1,28 @@
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
 class WorkflowState:
+    """
+    Stores all data generated throughout the study-pack workflow.
+    """
 
     user_request: Any
 
-    study_plan: Optional[dict] = None
+    study_plan: dict | None = None
 
-    study_content: Optional[dict] = None
+    study_content: dict | None = None
 
-    assessment: Optional[dict] = None
+    assessment: dict | None = None
 
-    review: Optional[dict] = None
+    review: dict | None = None
 
-    final_pack: Optional[dict] = None
+    final_pack: dict | None = None
 
     refinement_iteration: int = 0
 
-    errors: list[str] = field(
+    errors: list[dict[str, str]] = field(
         default_factory=list
     )
 
@@ -30,19 +33,27 @@ class WorkflowState:
     def mark_complete(
         self,
         stage: str,
-    ):
+    ) -> None:
+        """
+        Mark a workflow stage as completed.
+        """
 
         if stage not in self.completed_stages:
-
-            self.completed_stages.append(
-                stage
-            )
+            self.completed_stages.append(stage)
 
     def add_error(
         self,
+        stage: str,
         error: str,
-    ):
+    ) -> None:
+        """
+        Store an error together with the workflow stage
+        where it occurred.
+        """
 
         self.errors.append(
-            error
+            {
+                "stage": stage,
+                "error": str(error),
+            }
         )
