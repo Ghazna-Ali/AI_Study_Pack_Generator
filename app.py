@@ -2,21 +2,18 @@ import streamlit as st
 
 from config.settings import (
     APP_NAME,
+    APP_VERSION,
+    APP_DESCRIPTION,
     get_groq_api_key,
 )
-
-from config.settings import get_groq_api_key
 
 from ui.components import (
     render_header,
     render_inputs,
 )
-from ui.results import (
-    render_results,
-)
-from utils.errors import (
-    WorkflowError,
-)
+
+from ui.results import render_results
+
 from workflow.runner import (
     run_workflow,
 )
@@ -37,8 +34,8 @@ st.set_page_config(
 # SESSION STATE
 # ============================================================
 
-if "workflow_result" not in st.session_state:
-    st.session_state.workflow_result = None
+if "study_pack" not in st.session_state:
+    st.session_state.study_pack = None
 
 
 # ============================================================
@@ -55,189 +52,75 @@ st.divider()
 
 
 # ============================================================
-# INPUT
+# INPUT SECTION
 # ============================================================
 
 request = render_inputs()
 
+if request is None:
+    st.stop()
+
 
 # ============================================================
-# GENERATE
+# GENERATE STUDY PACK
 # ============================================================
 
-generate = st.button(
+if st.button(
     "🚀 Generate Study Pack",
     type="primary",
     use_container_width=True,
-)
-
-
-if generate:
-
-    # --------------------------------------------------------
-    # Validate input
-    # --------------------------------------------------------
-
-    if not request.subject.strip():
-
-        st.warning(
-            "Please enter a subject."
-        )
-
-        st.stop()
-
-
-    if not request.topic.strip():
-
-        st.warning(
-            "Please enter a topic."
-        )
-
-        st.stop()
-
-
-    if not request.study_time.strip():
-
-        st.warning(
-            "Please enter the available study time."
-        )
-
-        st.stop()
-
-
-    # --------------------------------------------------------
-    # Get API key
-    # --------------------------------------------------------
+):
 
     try:
+        # ----------------------------------------------------
+        # Get Groq API Key
+        # ----------------------------------------------------
 
         api_key = get_groq_api_key()
 
-    except Exception as error:
+        # ----------------------------------------------------
+        # Progress Display
+        # ----------------------------------------------------
 
-        st.error(
-            "Gemini API key is not configured."
-        )
+        progress_bar = st.progress(0)
+        status_text = st.empty()
 
-        st.info(
-            "Configure GEMINI_API_KEY in "
-            "Streamlit Secrets."
-        )
+        def update_progress(stage, progress):
+            progress_bar.progress(progress)
+            status_text.info(stage)
 
-        st.stop()
+        # ----------------------------------------------------
+        # Run Multi-Stage AI Workflow
+        # ----------------------------------------------------
 
+        with st.spinner("Generating your study pack..."):
 
-    # --------------------------------------------------------
-    # Workflow status UI
-    # --------------------------------------------------------
-
-    st.subheader(
-        "AI Workflow"
-    )
-
-    stages = [
-        "Planning",
-        "Content Generation",
-        "Assessment",
-        "Review",
-        "Refinement",
-    ]
-
-    status_placeholders = {
-        stage: st.empty()
-        for stage in stages
-    }
-
-
-    def update_progress(
-        stage,
-        status,
-        message="",
-    ):
-
-        placeholder = (
-            status_placeholders.get(
-                stage
-            )
-        )
-
-        if placeholder is None:
-            return
-
-        if status == "running":
-
-            placeholder.info(
-                f"🔄 {stage}"
-            )
-
-        elif status == "complete":
-
-            placeholder.success(
-                f"✅ {stage}"
-            )
-
-        elif status == "skipped":
-
-            placeholder.write(
-                f"⏭️ {stage}"
-            )
-
-
-    # --------------------------------------------------------
-    # Run workflow
-    # --------------------------------------------------------
-
-    try:
-
-        with st.spinner(
-            "Running multi-stage AI workflow..."
-        ):
-
-            state = run_workflow(
-                api_key=api_key,
+            result = run_workflow(
                 request=request,
-                progress_callback=(
-                    update_progress
-                ),
+                api_key=api_key,
+                progress_callback=update_progress,
             )
 
-
         # ----------------------------------------------------
-        # Store result
+        # Save Result
         # ----------------------------------------------------
 
-        st.session_state.workflow_result = {
-            "study_plan_data": (
-                state.study_plan
-            ),
-            "final_pack": (
-                state.final_pack
-            ),
-            "review": (
-                state.review
-            ),
-            "completed_stages": (
-                state.completed_stages
-            ),
-            "iteration": (
-                state.refinement_iteration
-            ),
-        }
+        st.session_state.study_pack = result
+
+        progress_bar.progress(100)
+        status_text.success(
+            "Study pack generated successfully!"
+        )
 
         st.success(
-            "🎉 Study pack generated successfully!"
-        )
-
-    except WorkflowError as error:
-
-        st.error(
-            f"❌ Workflow failed: {error}"
+            "Your AI study pack is ready."
         )
 
     except Exception as error:
 
         st.error(
-            "❌ An unexpected error occurred."
+            "Something went wrong while generating "
+            "the study pack."
         )
 
         st.exception(error)
@@ -247,8 +130,12 @@ if generate:
 # RESULTS
 # ============================================================
 
-if st.session_state.workflow_result:
+if st.session_state.study_pack is not None:
+
+    st.divider()
+
+    st.header("📖 Your Study Pack")
 
     render_results(
-        st.session_state.workflow_result
+        st.session_state.study_pack
     )
